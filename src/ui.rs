@@ -78,3 +78,45 @@ pub struct Rect {
     pub width: usize,
     pub height: usize,
 }
+
+impl Rect {
+    pub fn split_horizontal(&self, split_percent: usize) -> (Rect, Rect) {
+        let left_w = (self.width * split_percent) / 100;
+        let right_w = self.width.saturating_sub(left_w);
+
+        let left = Rect {
+            x: self.x,
+            y: self.y,
+            width: left_w,
+            height: self.height,
+        };
+        let right = Rect {
+            x: self.x + left_w,
+            y: self.y,
+            width: right_w,
+            height: self.height,
+        };
+
+        (left, right)
+    }
+
+    pub fn split_vertical(&self, split_percent: usize) -> (Rect, Rect) {
+        let top_h = (self.height * split_percent) / 100;
+        let bottom_h = self.height.saturating_sub(top_h);
+
+        let top = Rect {
+            x: self.x,
+            y: self.y,
+            width: self.width,
+            height: top_h,
+        };
+        let bottom = Rect {
+            x: self.x,
+            y: self.y + top_h,
+            width: self.width,
+            height: bottom_h,
+        };
+
+        (top, bottom)
+    }
+}

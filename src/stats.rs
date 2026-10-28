@@ -59,3 +59,78 @@ pub fn get_ram_info() -> (u32, u32) {
 
     return (((total_kb - available_kb) / 1024), (total_kb / 1024));
 }
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum SortMode {
+    Ram,
+    Cpu,
+}
+
+pub struct Process {
+    pub pid: u32,
+    pub name: String,
+    pub ram_mb: u32,
+    pub cpu_ticks: u64,
+}
+
+pub fn get_processes(sort_by: SortMode) -> Vec<Process> {
+    let mut processes = Vec::new();
+
+    let entries = match std::fs::read_dir("/proc") {
+        Ok(dir) => dir,
+        Err(_) => return processes,
+    };
+
+    for entry in entries.flatten() {
+        let name = entry.file_name();
+        let name_str = name.to_string_lossy();
+
+        let pid = match name_str.parse::<u32>() {
+            Ok(comm) => comm,
+            Err(_) => continue,
+        };
+
+        let comm_path = format!("/proc/{}/comm", pid);
+        let proc_name = match std::fs::read_to_string(&comm_path) {
+            Ok(comm) => comm.trim().to_string(),
+            Err(_) => continue,
+        };
+
+        let statm_path = format!("/proc/{}/statm", pid);
+        let ram_mb = match std::fs::read_to_string(&statm_path) {
+            Ok(statm) => statm.split_whitespace().nth(1).and_then(|s| s.parse::<u64>().ok()).map(|pages| ((pages * 4) / 1024) as u32).unwrap_or(0),
+            Err(_) => 0,
+        };
+
+        let stat_path = format!("/proc/{}/stat", pid);
+        let cpu_ticks = match std::fs::read_to_string(&stat_path) {
+            Ok(content) => {
+                if let Some(rest) = content.rfind(')').map(|idx| &content[idx + 2..]) {
+                    let parts: Vec<&str> = rest.split_whitespace().collect();
+                    let utime = parts.get(11).and_then(|s| s.parse::<u64>().ok()).unwrap_or(0);
+                    let stime = parts.get(12).and_then(|s| s.parse::<u64>().ok()).unwrap_or(0);
+                    utime + stime
+                } else {
+                    0
+                }
+            }
+            Err(_) => 0,
+        };
+
+        processes.push(Process {
+            pid,
+            name: proc_name,
+            ram_mb: ram_mb,
+            cpu_ticks
+        });
+    }
+
+    // processes.sort_by_key(|p| p.pid);
+
+    match sort_by {
+        SortMode::Ram => processes.sort_by(|a, b| b.ram_mb.cmp(&a.ram_mb)),
+        SortMode::Cpu => processes.sort_by(|a, b| b.cpu_ticks.cmp(&a.cpu_ticks)),
+    }
+
+    processes
+}

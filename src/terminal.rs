@@ -1,5 +1,5 @@
 use std::io::Write;
-
+use std::io::Read;
 pub fn get_termit_size() -> (usize, usize) {
     unsafe {
         let mut winsize: libc::winsize = std::mem::zeroed();
@@ -40,6 +40,38 @@ impl RawTermit {
             return Ok(RawTermit { org_state: termit });
         }
     }
+
+    pub fn read_key(&self, timeout_ms: i32) -> Option<Key> {
+        let mut poll_fd = libc::pollfd {
+            fd: libc::STDIN_FILENO,
+            events: libc::POLLIN,
+            revents: 0,
+        };
+
+        let ready = unsafe { libc::poll(&mut poll_fd, 1, timeout_ms) };
+        if ready <= 0 {
+            return None;
+        }
+
+        let mut buf = [0u8; 4];
+        let bytes_read = std::io::stdin().read(&mut buf).unwrap_or(0);
+
+        if bytes_read == 1 {
+            match buf[0] {
+                b'q' | b'Q' => Some(Key::Quit),
+                b'\t' => Some(Key::Tab),
+                b => Some(Key::Char(b as char)),
+            }
+        } else if bytes_read >= 3 && buf[0] == 0x1b && buf[1] == b'[' {
+            match buf[2] {
+                b'A' => Some(Key::Up),
+                b'B' => Some(Key::Down),
+                _ => Some(Key::Other),
+            }
+        } else {
+            Some(Key::Other)
+        }
+    }
 }
 
 impl Drop for RawTermit {
@@ -51,4 +83,14 @@ impl Drop for RawTermit {
             std::io::stdout().flush().expect("prank");
         }
     }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum Key {
+    Char(char),
+    Tab,
+    Up,
+    Down,
+    Quit,
+    Other,
 }
