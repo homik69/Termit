@@ -20,12 +20,30 @@ fn main() {
 
     let (mut prev_idle, mut prev_total) = get_cpu_ticks();
 
+    let cpu_name = stats::get_cpu_name();
+    let gpu_name = stats::get_gpu_name();
+
     loop {
-        print!("\x1b[HTermit by homik (q to quit)\x1b[K\r\n");
+        print!("\x1b[2J");
 
-        // let title = ui::color_rgb(189, 147, 249, "Termit by homik");
+        let (term_w, term_h) = terminal::get_termit_size();
 
-        ui::create_window("Termit by homik", 50);
+        let main_height = term_h.saturating_sub(2);
+        let half_width = term_w / 2;
+
+        let left_rect = ui::Rect {
+            x: 1,
+            y: 2,
+            width: half_width,
+            height: main_height,
+        };
+
+        let right_rect = ui::Rect {
+            x: 1 + half_width,
+            y: 2,
+            width: term_w.saturating_sub(half_width),
+            height: main_height,
+        };
 
         let (used_ram, total_ram) = get_ram_info();
         // print!("Ram: {} out of {}\x1b[K\r\n", used_ram, total_ram);
@@ -39,25 +57,24 @@ fn main() {
         } else {
             0
         };
-
+        ui::create_window("one", left_rect);
         // print!("CPU Usage: {}%\x1b[K\r\n", cpu_percent);
 
-        let cpu_name = stats::get_cpu_name();
-        ui::draw_row("CPU Model:", &cpu_name, 50);
-
         let cpu_text = format!("{}%", cpu_percent);
-        ui::draw_row("CPU Usage:", &cpu_text, 50);
-
-        ui::draw_row(" ", " ", 50);
+        ui::draw_row("CPU Usage:", &cpu_text, left_rect, 0);
 
         let ram_text = format!("{} / {} MB", used_ram, total_ram);
-        ui::draw_row("RAM Usage:", &ram_text, 50);
+        ui::draw_row("RAM Usage:", &ram_text, left_rect, 1);
 
-        ui::draw_row(" ", " ", 50);
+        ui::fill_empty_rows(left_rect, 2);
+        ui::draw_row("Button to quit:", "Q", left_rect, 3);
 
-        let gpu_name = stats::get_gpu_name();
+        ui::draw_footer(left_rect);
+        ui::create_window("two", right_rect);
 
-        let clean_gpu_name = gpu_name.trim()
+        ui::draw_row("CPU Model:", &cpu_name, right_rect, 0);
+
+        let clean_gpu_name = gpu_name
             .replace("Advanced Micro Devices, Inc. [AMD/ATI]", "")
             .replace("Corporation", "")
             .replace("rev c0", "")
@@ -65,11 +82,13 @@ fn main() {
             .replace("[", "")
             .replace("]", "")
             .replace("()", "")
-            .trim().to_string();
+            .trim()
+            .to_string();
 
-        ui::draw_row("GPU Model:", &clean_gpu_name, 50);
+        ui::draw_row("GPU Model:", &clean_gpu_name, right_rect, 1);
 
-        ui::draw_footer(50);
+        ui::fill_empty_rows(right_rect, 2);
+        ui::draw_footer(right_rect);
         prev_idle = curr_idle;
         prev_total = curr_total;
 

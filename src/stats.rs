@@ -33,7 +33,6 @@ pub fn get_gpu_name() -> String {
         .unwrap_or_else(|| "Unknown GPU".to_string())
 }
 
-
 pub fn get_ram_info() -> (u32, u32) {
     let meminfo = std::fs::read_to_string("/proc/meminfo").unwrap();
     let mut total_kb = 0;
