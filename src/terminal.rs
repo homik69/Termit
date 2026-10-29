@@ -1,5 +1,5 @@
-use std::io::Write;
 use std::io::Read;
+use std::io::Write;
 pub fn get_termit_size() -> (usize, usize) {
     unsafe {
         let mut winsize: libc::winsize = std::mem::zeroed();
@@ -13,6 +13,7 @@ pub fn get_termit_size() -> (usize, usize) {
     }
 }
 
+#[derive(Debug)]
 pub struct RawTermit {
     org_state: libc::termios,
 }

@@ -8,9 +8,11 @@ use stats::{get_cpu_ticks, get_ram_info};
 use terminal::RawTermit;
 fn main() {
     println!("Welcome to Termit");
+    println!(":dwdwdww{:?}", RawTermit::new());
+    println!("Welcome to Termit");
 
     let _termit = RawTermit::new().unwrap();
-
+    
     let (mut prev_idle, mut prev_total) = get_cpu_ticks();
 
     let cpu_name = stats::get_cpu_name();
@@ -19,11 +21,10 @@ fn main() {
     let mut sort_mode = stats::SortMode::Ram;
 
     let mut scroll_offset: usize = 0;
-    
+
     let mut prev_size = (0usize, 0usize);
 
     loop {
-        
 
         let (term_w, term_h) = terminal::get_termit_size();
 
@@ -64,7 +65,16 @@ fn main() {
         let ram_text = format!("{} / {} MB", used_ram, total_ram);
         ui::draw_row("RAM Usage:", &ram_text, left_rect, 1);
 
-        ui::draw_row("Sort:", if sort_mode == stats::SortMode::Ram { "RAM [Tab]" } else { "CPU [Tab]" }, left_rect, 2);
+        ui::draw_row(
+            "Sort:",
+            if sort_mode == stats::SortMode::Ram {
+                "RAM [Tab]"
+            } else {
+                "CPU [Tab]"
+            },
+            left_rect,
+            2,
+        );
         ui::draw_row("Exit key:", "Q", left_rect, 2);
 
         ui::fill_empty_rows(left_rect, 3);
@@ -94,12 +104,20 @@ fn main() {
 
         let max_rows = bottom_rect.height.saturating_sub(2);
         let window_title = match sort_mode {
-            stats::SortMode::Ram => format!("Processes (RAM) [{}-{}/{}]", scroll_offset + 1, (scroll_offset + max_rows).min(proc_list.len()), proc_list.len()),
-            stats::SortMode::Cpu => format!("Processes (CPU) [{}-{}/{}]", scroll_offset + 1, (scroll_offset + max_rows).min(proc_list.len()), proc_list.len()),
+            stats::SortMode::Ram => format!(
+                "Processes (RAM) [{}-{}/{}]",
+                scroll_offset + 1,
+                (scroll_offset + max_rows).min(proc_list.len()),
+                proc_list.len()
+            ),
+            stats::SortMode::Cpu => format!(
+                "Processes (CPU) [{}-{}/{}]",
+                scroll_offset + 1,
+                (scroll_offset + max_rows).min(proc_list.len()),
+                proc_list.len()
+            ),
         };
         ui::create_window(&window_title, bottom_rect);
-
-        
 
         let max_scroll = proc_list.len().saturating_sub(max_rows);
         if scroll_offset > max_scroll {
@@ -108,7 +126,12 @@ fn main() {
 
         let mut rendered_count = 0;
 
-        for (idx, p) in proc_list.iter().skip(scroll_offset).take(max_rows).enumerate() {
+        for (idx, p) in proc_list
+            .iter()
+            .skip(scroll_offset)
+            .take(max_rows)
+            .enumerate()
+        {
             let label = format!("{}:", p.name);
             let value = match sort_mode {
                 stats::SortMode::Ram => format!("{} MB (PID {})", p.ram_mb, p.pid),
@@ -117,7 +140,6 @@ fn main() {
             ui::draw_row(&label, &value, bottom_rect, idx);
             rendered_count = idx + 1;
         }
-
 
         ui::fill_empty_rows(bottom_rect, rendered_count);
         ui::draw_footer(bottom_rect);
