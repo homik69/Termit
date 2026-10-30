@@ -4,11 +4,10 @@ mod ui;
 
 use std::io::Write;
 
-use stats::{get_cpu_ticks, get_ram_info};
 use terminal::RawTermit;
+use crate::stats::{get_cpu_ticks, get_ram_info};
+
 fn main() {
-    println!("Welcome to Termit");
-    println!(":dwdwdww{:?}", RawTermit::new());
     println!("Welcome to Termit");
 
     let _termit = RawTermit::new().unwrap();
@@ -23,6 +22,17 @@ fn main() {
     let mut scroll_offset: usize = 0;
 
     let mut prev_size = (0usize, 0usize);
+
+    let clean_gpu_name = gpu_name
+            .replace("Advanced Micro Devices, Inc. [AMD/ATI]", "")
+            .replace("Corporation", "")
+            .replace("rev c0", "")
+            .replace("Navi 48", "")
+            .replace("[", "")
+            .replace("]", "")
+            .replace("()", "")
+            .trim()
+            .to_string();
 
     loop {
 
@@ -84,17 +94,6 @@ fn main() {
 
         ui::draw_row("CPU Model:", &cpu_name, right_rect, 0);
 
-        let clean_gpu_name = gpu_name
-            .replace("Advanced Micro Devices, Inc. [AMD/ATI]", "")
-            .replace("Corporation", "")
-            .replace("rev c0", "")
-            .replace("Navi 48", "")
-            .replace("[", "")
-            .replace("]", "")
-            .replace("()", "")
-            .trim()
-            .to_string();
-
         ui::draw_row("GPU Model:", &clean_gpu_name, right_rect, 1);
 
         ui::fill_empty_rows(right_rect, 2);
@@ -120,9 +119,7 @@ fn main() {
         ui::create_window(&window_title, bottom_rect);
 
         let max_scroll = proc_list.len().saturating_sub(max_rows);
-        if scroll_offset > max_scroll {
-            scroll_offset = max_scroll;
-        }
+        scroll_offset = scroll_offset.min(max_scroll);
 
         let mut rendered_count = 0;
 
@@ -152,10 +149,7 @@ fn main() {
             match key {
                 terminal::Key::Quit => break,
                 terminal::Key::Tab => {
-                    sort_mode = match sort_mode {
-                        stats::SortMode::Ram => stats::SortMode::Cpu,
-                        stats::SortMode::Cpu => stats::SortMode::Ram,
-                    };
+                    sort_mode.toggle();
                 }
                 terminal::Key::Up => {
                     scroll_offset = scroll_offset.saturating_sub(1);

@@ -81,7 +81,7 @@ impl Drop for RawTermit {
             libc::tcsetattr(libc::STDIN_FILENO, libc::TCSANOW, &self.org_state);
             print!("\x1b[?25h");
             print!("\x1b[?1049l");
-            std::io::stdout().flush().expect("prank");
+            std::io::stdout().flush().ok();
         }
     }
 }

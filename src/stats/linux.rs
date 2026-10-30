@@ -1,7 +1,8 @@
 use std::process::Command;
+use crate::stats::{Process, SortMode};
 
 pub fn get_cpu_ticks() -> (u64, u64) {
-    let cpuinfo = std::fs::read_to_string("/proc/stat").unwrap();
+    let cpuinfo = std::fs::read_to_string("/proc/stat").unwrap_or_default();
     let usage = cpuinfo.lines().next().unwrap().split_whitespace().skip(1);
     let usage_to_vec: Vec<u64> = usage.map(|x| x.parse::<u64>().unwrap()).collect();
     return (usage_to_vec[3] + usage_to_vec[4], usage_to_vec.iter().sum());

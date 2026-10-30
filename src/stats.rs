@@ -14,6 +14,15 @@ pub enum SortMode {
     Cpu,
 }
 
+impl SortMode {
+    pub fn toggle(&mut self) {
+        *self = match self {
+            SortMode::Ram => SortMode::Cpu,
+            SortMode::Cpu => SortMode::Ram,
+        };
+    }
+}
+
 pub struct Process {
     pub pid: u32,
     pub name: String,
