@@ -85,9 +85,9 @@ fn main() {
             left_rect,
             2,
         );
-        ui::draw_row("Exit key:", "Q", left_rect, 2);
+        ui::draw_row("Exit key:", "Q", left_rect, 3);
 
-        ui::fill_empty_rows(left_rect, 3);
+        ui::fill_empty_rows(left_rect, 4);
         ui::draw_footer(left_rect);
 
         ui::create_window("Hardware", right_rect);
